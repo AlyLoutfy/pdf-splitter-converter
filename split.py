@@ -23,11 +23,14 @@ def split(folder_path, dpi=100):
     # Load the original PDF
     reader = PdfReader(material_path)
 
+    # Filter out empty lines
+    filtered_instructions = [instr for instr in instructions if instr.strip()]
+
     # Initialize progress tracking
-    total_instructions = len(instructions)
+    total_instructions = len(filtered_instructions)
     print(f"Processing {total_instructions} instructions...")
 
-    for idx, instruction in enumerate(tqdm(instructions, desc="Processing Instructions")):
+    for idx, instruction in enumerate(tqdm(filtered_instructions, desc="Processing Instructions", bar_format="{l_bar}{bar}")):
         instruction = instruction.strip()
         if not instruction:
             continue  # Skip empty lines
