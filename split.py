@@ -1,10 +1,10 @@
 import os
 import sys
-from PyPDF2 import PdfReader, PdfWriter # Install PyPDF2 with 'pip install PyPDF2'
-from pdf2image import convert_from_path # Install pdf2image with 'pip install pdf2image'
-from tqdm import tqdm  # Install tqdm with 'pip install tqdm'
+from PyPDF2 import PdfReader, PdfWriter
+from pdf2image import convert_from_path
+from tqdm import tqdm
 
-def split_pdf(folder_path, dpi=100):
+def split(folder_path, dpi=100):
     material_path = os.path.join(folder_path, 'Material.pdf')
     instructions_path = os.path.join(folder_path, 'Instructions.txt')
     output_folder_pdfs = os.path.join(folder_path, 'PDFs')
@@ -79,8 +79,8 @@ def split_pdf(folder_path, dpi=100):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python3 split_pdf.py <folder_path>")
+        print("Usage: python3 split.py <folder_path>")
         sys.exit(1)
 
     folder_path = sys.argv[1]
-    split_pdf(folder_path)
+    split(folder_path)
