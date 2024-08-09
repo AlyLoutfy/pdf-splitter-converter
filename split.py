@@ -10,7 +10,7 @@ import re
 
 def split(folder_path, dpi=100):
     material_path = os.path.join(folder_path, 'Material.pdf')
-    instructions_path = os.path.join(folder_path, 'Instructions.txt')
+    instructions_path = os.path.join(folder_path, 'Instructions.xlsx')
     output_folder_pdfs = os.path.join(folder_path, 'PDFs')
     output_folder_pngs = os.path.join(folder_path, 'PNGs')
     output_folder_jpegs = os.path.join(folder_path, 'JPEGs')
@@ -20,33 +20,24 @@ def split(folder_path, dpi=100):
     os.makedirs(output_folder_pngs, exist_ok=True)
     os.makedirs(output_folder_jpegs, exist_ok=True)
     
-    # Read the instructions file
-    with open(instructions_path, 'r') as file:
-        instructions = file.readlines()
+    # Read the instructions from Excel file
+    instructions_df = pd.read_excel(instructions_path)
+    
+    # Check that the Excel file contains the necessary columns
+    if not {'Unit ID', 'Pages'}.issubset(instructions_df.columns):
+        raise ValueError("Instructions Excel file must contain 'Unit ID' and 'Pages' columns.")
 
     # Load the original PDF
     reader = PdfReader(material_path)
 
-    # Filter out empty lines
-    filtered_instructions = [instr for instr in instructions if instr.strip()]
-
     # Initialize progress tracking
-    total_instructions = len(filtered_instructions)
+    total_instructions = len(instructions_df)
     print(f"Processing {total_instructions} instructions...")
 
-    for idx, instruction in enumerate(tqdm(filtered_instructions, desc="Processing Instructions", bar_format="{l_bar}{bar}")):
-        instruction = instruction.strip()
-        if not instruction:
-            continue  # Skip empty lines
-
-        # Split the instruction line
-        parts = instruction.split(' ')
-        if len(parts) != 2:
-            print(f"Skipping invalid instruction line: {instruction}")
-            continue
-
-        page_list = parts[0]
-        new_filename = parts[1]
+    for idx, row in tqdm(instructions_df.iterrows(), total=total_instructions, desc="Processing Instructions", bar_format="{l_bar}{bar}"):
+        unit_id = row['Unit ID']
+        page_list = row['Pages']
+        new_filename = unit_id
 
         # Parse page list which can contain ranges and specific pages
         pages_to_extract = set()
@@ -147,7 +138,7 @@ def extract_data(folder_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Split a PDF, convert to images, and/or extract data.")
-    parser.add_argument('folder_path', type=str, help='Folder path containing Material.pdf and Instructions.txt')
+    parser.add_argument('folder_path', type=str, help='Folder path containing Material.pdf and Instructions.xlsx')
     parser.add_argument('--dpi', type=int, default=100, help='DPI for converting PDFs to images')
     parser.add_argument('--action', choices=['split', 'extract', 'both'], default='both', help='Action to perform: split only, extract only, or both')
     args = parser.parse_args()
