@@ -88,3 +88,9 @@ python3 split.py <folder_path>
 ```
 
 Replace `<folder_path>` with the path to your folder containing `Material.pdf` and `Instructions.txt`.
+
+You can also optionally, specify the `dpi` argument to set the resolution for converting PDF pages to images (default is 100)
+
+```sh
+python3 split.py <folder_path> --dpi <dpi>
+```
