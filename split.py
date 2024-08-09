@@ -3,6 +3,10 @@ import argparse
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
 from tqdm import tqdm
+import pandas as pd
+import pdfplumber
+import re
+
 
 def split(folder_path, dpi=100):
     material_path = os.path.join(folder_path, 'Material.pdf')
@@ -80,10 +84,76 @@ def split(folder_path, dpi=100):
 
     print("PDFs, PNGs, and JPEGs have been successfully split and saved.")
 
+def clean_value(value):
+    """Remove whitespace from a value."""
+    if isinstance(value, str):
+        return re.sub(r'\s+', '', value)
+    return value
+
+def extract_data(folder_path):
+    output_file = os.path.join(folder_path, 'Extracted Data.xlsx')
+
+    # Initialize DataFrame
+    columns = ['Unit ID', 'BUA', 'Bedrooms', 'Covered Terrace', 'Uncovered Terrace']
+    df = pd.DataFrame(columns=columns)
+
+    def extract_details(pdf_path):
+        details = {
+            'Bedrooms': '',
+            'BUA': '',
+            'Covered Terrace': '',
+            'Uncovered Terrace': ''
+        }
+
+        with pdfplumber.open(pdf_path) as pdf:
+            full_text = ""
+            for page in pdf.pages:
+                full_text += page.extract_text()
+
+        # Define regex patterns to find the details
+        patterns = {
+            'Bedrooms': r'Bedrooms\s*[:\-]?\s*([\d]+)',
+            'BUA': r'BUA\s*[:\-]?\s*([\d\s,]+(?:\.\d+)?)\s*(?:sqm|m²|square\s*meters)?',
+            'Covered Terrace': r'Covered\s*Terrace\s*[:\-]?\s*([\d\s,]+(?:\.\d+)?)\s*(?:sqm|m²)?',
+            'Uncovered Terrace': r'Uncovered\s*Terrace\s*[:\-]?\s*([\d\s,]+(?:\.\d+)?)\s*(?:sqm|m²)?'
+        }
+
+        # Search for patterns and extract details
+        for key, pattern in patterns.items():
+            match = re.search(pattern, full_text, re.IGNORECASE)
+            if match:
+                details[key] = match.group(1).strip()
+
+        return details
+
+    for pdf_filename in os.listdir(os.path.join(folder_path, 'PDFs')):
+        if pdf_filename.lower().endswith('.pdf'):
+            pdf_path = os.path.join(folder_path, 'PDFs', pdf_filename)
+            unit_id = os.path.splitext(pdf_filename)[0]
+            details = extract_details(pdf_path)
+
+            # Clean data
+            details = {key: clean_value(value) for key, value in details.items()}
+
+            # Append data to DataFrame
+            df = pd.concat([df, pd.DataFrame([[unit_id, details['BUA'], details['Bedrooms'], details['Covered Terrace'], details['Uncovered Terrace']]], columns=columns)], ignore_index=True)
+
+    # Sort DataFrame alphabetically by Unit ID
+    df = df.sort_values(by='Unit ID').reset_index(drop=True)
+
+    # Save DataFrame to Excel
+    df.to_excel(output_file, index=False)
+    print(f"Extracted data has been saved to {output_file}")
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Split a PDF based on instructions and convert to images.")
+    parser = argparse.ArgumentParser(description="Split a PDF, convert to images, and/or extract data.")
     parser.add_argument('folder_path', type=str, help='Folder path containing Material.pdf and Instructions.txt')
     parser.add_argument('--dpi', type=int, default=100, help='DPI for converting PDFs to images')
+    parser.add_argument('--action', choices=['split', 'extract', 'both'], default='both', help='Action to perform: split only, extract only, or both')
     args = parser.parse_args()
 
-    split(args.folder_path, dpi=args.dpi)
+    if args.action in ['split', 'both']:
+        split(args.folder_path, dpi=args.dpi)
+
+    if args.action in ['extract', 'both']:
+        extract_data(args.folder_path)
