@@ -78,6 +78,8 @@ def clean_value(value):
     return value
 
 def extract_data(folder_path):
+    print("Extracting Data..")
+
     output_file = os.path.join(folder_path, 'Extracted Data.xlsx')
 
     # Initialize DataFrame
@@ -110,6 +112,13 @@ def extract_data(folder_path):
             match = re.search(pattern, full_text, re.IGNORECASE)
             if match:
                 details[key] = match.group(1).strip()
+
+        # If BUA is not found explicitly, find the first occurrence of a numeric value followed by "sqm"
+        if not details['BUA']:
+            sqm_pattern = r'(\d+[\d\s,]*\d*)\s*(sqm|SQM|m²)'
+            sqm_match = re.search(sqm_pattern, full_text, re.IGNORECASE)
+            if sqm_match:
+                details['BUA'] = sqm_match.group(1).strip()
 
         return details
 
