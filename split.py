@@ -1,5 +1,5 @@
 import os
-import sys
+import argparse
 from PyPDF2 import PdfReader, PdfWriter
 from pdf2image import convert_from_path
 from tqdm import tqdm
@@ -15,7 +15,7 @@ def split(folder_path, dpi=100):
     os.makedirs(output_folder_pdfs, exist_ok=True)
     os.makedirs(output_folder_pngs, exist_ok=True)
     os.makedirs(output_folder_jpegs, exist_ok=True)
-
+    
     # Read the instructions file
     with open(instructions_path, 'r') as file:
         instructions = file.readlines()
@@ -81,9 +81,9 @@ def split(folder_path, dpi=100):
     print("PDFs, PNGs, and JPEGs have been successfully split and saved.")
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python3 split.py <folder_path>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Split a PDF based on instructions and convert to images.")
+    parser.add_argument('folder_path', type=str, help='Folder path containing Material.pdf and Instructions.txt')
+    parser.add_argument('--dpi', type=int, default=100, help='DPI for converting PDFs to images')
+    args = parser.parse_args()
 
-    folder_path = sys.argv[1]
-    split(folder_path)
+    split(args.folder_path, dpi=args.dpi)
