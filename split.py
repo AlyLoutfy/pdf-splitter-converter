@@ -7,7 +7,6 @@ import pandas as pd
 import pdfplumber
 import re
 
-
 def split(folder_path, dpi=100):
     material_path = os.path.join(folder_path, 'Material.pdf')
     instructions_path = os.path.join(folder_path, 'Instructions.xlsx')
@@ -20,26 +19,23 @@ def split(folder_path, dpi=100):
     os.makedirs(output_folder_pngs, exist_ok=True)
     os.makedirs(output_folder_jpegs, exist_ok=True)
     
-    # Read the instructions from Excel file
+    # Read the instructions from Excel
     instructions_df = pd.read_excel(instructions_path)
-    
-    # Check that the Excel file contains the necessary columns
-    if not {'Unit ID', 'Pages'}.issubset(instructions_df.columns):
-        raise ValueError("Instructions Excel file must contain 'Unit ID' and 'Pages' columns.")
+    instructions = instructions_df.values.tolist()
 
     # Load the original PDF
     reader = PdfReader(material_path)
 
     # Initialize progress tracking
-    total_instructions = len(instructions_df)
+    total_instructions = len(instructions)
     print(f"Processing {total_instructions} instructions...")
 
-    for idx, row in tqdm(instructions_df.iterrows(), total=total_instructions, desc="Processing Instructions", bar_format="{l_bar}{bar}"):
-        unit_id = row['Unit ID']
-        page_list = row['Pages']
-        new_filename = unit_id
+    for idx, (unit_id, page_list) in enumerate(tqdm(instructions, desc="Processing Instructions", bar_format="{l_bar}{bar}")):
+        page_list = str(page_list).strip()
+        if not page_list:
+            continue  # Skip empty lines
 
-        # Parse page list which can contain ranges and specific pages
+        # Parse page list which can contain ranges, specific pages, or a single page
         pages_to_extract = set()
         for segment in page_list.split(','):
             if '-' in segment:
@@ -47,7 +43,7 @@ def split(folder_path, dpi=100):
                 start_page, end_page = map(int, segment.split('-'))
                 pages_to_extract.update(range(start_page, end_page + 1))
             else:
-                # Handle specific pages
+                # Handle specific pages or single page
                 pages_to_extract.add(int(segment))
 
         # Create a new PDF writer
@@ -61,15 +57,15 @@ def split(folder_path, dpi=100):
                 print(f"Warning: Page number {page_num} is out of range in the original PDF.")
 
         # Save the new PDF
-        output_pdf_path = os.path.join(output_folder_pdfs, f'{new_filename}.pdf')
+        output_pdf_path = os.path.join(output_folder_pdfs, f'{unit_id}.pdf')
         with open(output_pdf_path, 'wb') as output_pdf:
             writer.write(output_pdf)
 
         # Convert the new PDF to PNG and JPEG images
         pages = convert_from_path(output_pdf_path, dpi=dpi)
         for i, page in enumerate(pages):
-            output_png_path = os.path.join(output_folder_pngs, f'{new_filename}_page_{i + 1}.png')
-            output_jpeg_path = os.path.join(output_folder_jpegs, f'{new_filename}_page_{i + 1}.jpeg')
+            output_png_path = os.path.join(output_folder_pngs, f'{unit_id}_page_{i + 1}.png')
+            output_jpeg_path = os.path.join(output_folder_jpegs, f'{unit_id}_page_{i + 1}.jpeg')
             page.save(output_png_path, 'PNG')
             page.save(output_jpeg_path, 'JPEG')
 
