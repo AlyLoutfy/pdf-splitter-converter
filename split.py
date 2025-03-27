@@ -172,8 +172,8 @@ def create_zip_file(folder_path: str) -> None:
     """Create a zip file of the PDFs folder."""
     print("\nCreating zip file of PDFs folder...")
     pdfs_folder = os.path.join(folder_path, 'PDFs')
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    zip_filename = f"PDFs_{timestamp}.zip"
+    parent_folder_name = os.path.basename(folder_path)
+    zip_filename = f"{parent_folder_name}-PDFs.zip"
     zip_path = os.path.join(folder_path, zip_filename)
     
     try:
