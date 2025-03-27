@@ -1,125 +1,82 @@
-# PDF Splitter, Converter, and Data Extractor
+# PDF Split Tool
 
-This script allows you to `Split` a PDF file into new PDFs based on instructions, `Convert` the resulting PDFs into PNG and JPEG images, and `Extract` specific details from the PDFs to save into an Excel file.
+A Python script that splits a PDF file into multiple PDFs based on page ranges specified in an Excel file. The script can also convert the split PDFs to images and extract specific data from them.
+
+## Features
+
+- Split a PDF file into multiple PDFs based on page ranges from an Excel file
+- Support for custom page ordering (e.g., "1-15, 76, 40-43, 70-75")
+- Convert split PDFs to PNG and JPEG images (optional)
+- Extract specific data from PDFs (optional)
+- Create a zip file of all split PDFs (optional)
+- Interactive command-line interface
+- Progress bar for processing instructions
 
 ## Requirements
 
-To run this script, you need Python and a few Python packages. Follow these steps to set up your environment:
+- Python 3.6 or higher
+- PyPDF2
+- pdf2image
+- pandas
+- pdfplumber
+- tqdm
+- poppler (for pdf2image)
 
-### 1. Install Python
+## Installation
 
-Ensure you have Python installed. You can download it from the [official Python website](https://www.python.org/downloads/).
-
-### 2. Install Required Packages
-
-You need to install the following Python packages:
-
-- `PyPDF2` for PDF manipulation
-- `pdf2image` for converting PDF pages to images
-- `tqdm` for displaying a progress bar
-- `pandas` for handling Excel files and data manipulation
-- `pdfplumber` for extracting text and data from PDF documents
-
-You can install these packages using pip. Open your terminal and run:
-
-```sh
-pip install PyPDF2 pdf2image tqdm pandas pdfplumber
-```
-
-### 3. Install Poppler
-
-`pdf2image` requires Poppler to be installed.
-
-On Ubuntu/Debian:
-
-```sh
-sudo apt-get install poppler-utils
-```
-
-On macOS (using Homebrew):
-
-Install Homebrew (if not already installed). You can install Homebrew by running:
-
-```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
-
-Install Poppler using Homebrew:
-
-```sh
-brew install poppler
-```
+1. Clone this repository or download the script
+2. Install the required packages:
+   ```bash
+   pip install PyPDF2 pdf2image pandas pdfplumber tqdm
+   ```
+3. Install poppler:
+   - Windows: Download and install poppler from [poppler releases](http://blog.alivate.com.au/poppler-windows/)
+   - Linux: `sudo apt-get install poppler-utils`
+   - macOS: `brew install poppler`
 
 ## Usage
 
-### 1. Prepare Your Folder Structure
+1. Place your input files in a folder:
 
-Place your files in a folder with the following structure:
+   - One PDF file (any name)
+   - One Excel file (any name) with two columns:
+     - Unit ID: The identifier for the output PDF
+     - Page List: Comma-separated list of page ranges and specific pages (e.g., "1-15, 76, 40-43, 70-75")
 
-```plaintext
-<folder_path>/
-├── Material.pdf
-├── Instructions.xlsx
-├── PDFs/ (this will be created by the script if it doesn't exist)
-├── PNGs/ (this will be created by the script if it doesn't exist)
-└── JPEGs/ (this will be created by the script if it doesn't exist)
-```
+2. Run the script:
 
-### 2. Instructions.xlsx
+   ```bash
+   python split.py path/to/your/folder
+   ```
 
-Create an Instructions.xlsx file with two columns: `Unit ID` and `Pages`, specifying filenames and page ranges in the following format:
+3. Answer the interactive prompts:
+   - Would you like to create PNG and JPEG images? (y/n)
+   - Would you like to extract data from the PDFs? (y/n)
+   - Would you like to create a zip file of the PDFs folder? (y/n)
+   - If creating images, enter DPI value (default: 100)
 
-| Unit ID | Pages |
-| ------- | ----- |
-| C3      | 1-3   |
-| C4      | 5-7   |
-| D1      | 5,8,9 |
-| I4(H)   | 10-15 |
+## Output
 
-> [!TIP]
-> Page Ranges and Specific Pages: Instructions in the Excel file can include both ranges (e.g., "1-3") and specific pages (e.g., "2,3,5") for splitting PDFs.
+The script will create the following folders in your input directory:
 
-### 3. Extract Data from PDFs
+- `PDFs/`: Contains the split PDF files
+- `PNGs/`: Contains PNG images (if requested)
+- `JPEGs/`: Contains JPEG images (if requested)
+- `PDFs_YYYYMMDD_HHMMSS.zip`: Zip file of all PDFs (if requested)
+- `Extracted Data.xlsx`: Excel file with extracted data (if requested)
 
-This script can also extract specific details (Unit ID, BUA, Bedrooms, Covered Terrace, Uncovered Terrace) from the split PDFs and save the extracted data into an Excel file `Extracted Data.xlsx`.
+## Data Extraction
 
-By default, the script will perform both the PDF split and data extraction tasks. However, if you only want to extract data without splitting the PDF, you can use the `--action` argument to specify the operation.
+If data extraction is enabled, the script will look for the following information in each PDF:
 
-Refer to the section below on how to use the `--action` argument to control whether the script splits the PDF, extracts data, or does both.
+- BUA (Built-up Area)
+- Number of Bedrooms
+- Covered Terrace area
+- Uncovered Terrace area
 
-> [!WARNING]
-> The data extraction feature is still under development, and the results may not be entirely accurate. The only reliable and stable data extracted so far is the `Unit ID` column. Please verify the other extracted data manually.
+## Notes
 
-### 4. Run the Script
-
-Open your terminal, navigate to the directory containing the script, and run:
-
-```sh
-python3 split.py <folder_path>
-```
-
-Replace `<folder_path>` with the path to your folder containing `Material.pdf` and `Instructions.xlsx`.
-
-> [!NOTE]
-> By default, the script will both split the PDF and extract data.
-
-You can optionally specify the `dpi` argument to set the resolution for converting PDF pages to images (default is 100):
-
-```sh
-python3 split.py <folder_path> --dpi <dpi>
-```
-
-> [!TIP]
-> If you want to specify the action, you can use the --action argument:
-
-To only split the PDF:
-
-```sh
-python3 split.py <folder_path> --action split
-```
-
-To only extract data:
-
-```sh
-python3 split.py <folder_path> --action extract
-```
+- The script will use the first PDF and Excel file it finds in the specified folder
+- Page numbers in the Excel file should match the actual page numbers in the PDF
+- The script supports both .xlsx and .xls Excel file formats
+- All prompts accept both 'y'/'yes' and 'n'/'no' as valid inputs
